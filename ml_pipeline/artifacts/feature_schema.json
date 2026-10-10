@@ -1,0 +1,33 @@
+{
+  "feature_names": [
+    "obi_mean_5s",
+    "obi_std_5s",
+    "obi_mean_15s",
+    "obi_std_15s",
+    "obi_mean_30s",
+    "obi_std_30s",
+    "spread",
+    "spread_velocity",
+    "micro_mid_divergence",
+    "cvd_1m",
+    "cvd_5m",
+    "cvd_velocity",
+    "trade_intensity",
+    "trade_intensity_zscore",
+    "price_return",
+    "price_velocity",
+    "realized_volatility",
+    "depth_imbalance",
+    "liquidity_removal_rate",
+    "sweep_score",
+    "fakeout_score",
+    "iceberg_score",
+    "spoof_score"
+  ],
+  "feature_count": 23,
+  "target_classes": [
+    "DOWN",
+    "NEUTRAL",
+    "UP"
+  ]
+}

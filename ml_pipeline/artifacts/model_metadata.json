@@ -1,0 +1,36 @@
+{
+  "model_type": "LightGBM Multiclass Classifier",
+  "accuracy": 0.9844444444444445,
+  "f1_macro": 0.9842260670118922,
+  "target_classes": [
+    "DOWN",
+    "NEUTRAL",
+    "UP"
+  ],
+  "feature_importances": {
+    "obi_mean_5s": 873,
+    "obi_std_5s": 86,
+    "obi_mean_15s": 130,
+    "obi_std_15s": 34,
+    "obi_mean_30s": 72,
+    "obi_std_30s": 46,
+    "spread": 52,
+    "spread_velocity": 64,
+    "micro_mid_divergence": 723,
+    "cvd_1m": 918,
+    "cvd_5m": 302,
+    "cvd_velocity": 103,
+    "trade_intensity": 35,
+    "trade_intensity_zscore": 14,
+    "price_return": 993,
+    "price_velocity": 0,
+    "realized_volatility": 48,
+    "depth_imbalance": 192,
+    "liquidity_removal_rate": 49,
+    "sweep_score": 0,
+    "fakeout_score": 487,
+    "iceberg_score": 5,
+    "spoof_score": 0
+  },
+  "onnx_exported": true
+}
