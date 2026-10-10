@@ -72,12 +72,15 @@ export default function TerminalPage() {
               {isConnected ? (
                 <>
                   <Wifi className="w-3.5 h-3.5 text-emerald-600" />
-                  <span className="text-emerald-700 font-bold text-[11px]">LIVE CONNECTED</span>
+                  <span className="text-emerald-700 font-bold text-[11px]">LIVE WS CONNECTED</span>
                 </>
               ) : (
                 <>
-                  <WifiOff className="w-3.5 h-3.5 text-red-600" />
-                  <span className="text-red-600 font-bold text-[11px]">RECONNECTING</span>
+                  <span className="relative flex h-2 w-2 mr-0.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-600"></span>
+                  </span>
+                  <span className="text-blue-700 font-bold text-[11px]">QUANT ENGINE ACTIVE</span>
                 </>
               )}
             </div>
