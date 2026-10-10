@@ -112,7 +112,7 @@ export default function TerminalPage() {
         </div>
 
         {/* RIGHT METRICS & SIGNALS (3 COLS -> 25%) */}
-        <div className="col-span-3 flex flex-col space-y-2.5 h-full overflow-y-auto">
+        <div className="col-span-3 flex flex-col justify-between h-full overflow-hidden gap-1.5">
           <MetricsHUD metrics={feed?.metrics} />
           <SignalPanel signal={feed?.signal} prediction={feed?.prediction} />
           <RiskPanel risk={feed?.risk} />
