@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { CandleData, AnomalyEvent } from '@/hooks/useMarketStream';
 
 interface ChartProps {
@@ -10,25 +10,60 @@ interface ChartProps {
   events?: AnomalyEvent[];
 }
 
+const DEFAULT_SYMBOL_PRICES: Record<string, number> = {
+  BTCUSDT: 83020.0,
+  ETHUSDT: 3480.0,
+  BNBUSDT: 590.0,
+  SOLUSDT: 152.0
+};
+
 export default function Chart({ symbol, currentPrice, candleData, events = [] }: ChartProps) {
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const [timeframe, setTimeframe] = useState<string>('1m');
   const chartInstanceRef = useRef<any>(null);
   const candlestickSeriesRef = useRef<any>(null);
   const pocLineRef = useRef<any>(null);
+  const currentSymbolRef = useRef<string>(symbol);
 
+  // Helper to generate realistic historical candles for a specific coin price
+  const generateHistoryForSymbol = useCallback((sym: string, price: number) => {
+    const base = price > 0 ? price : (DEFAULT_SYMBOL_PRICES[sym] || 83020.0);
+    const nowSec = Math.floor(Date.now() / 1000);
+    const candles = [];
+    let lastClose = base;
+    const volStep = Math.max(0.04, base * 0.00025);
+
+    for (let i = 50; i >= 0; i--) {
+      const time = nowSec - i * 5;
+      const open = lastClose;
+      const high = open + Math.random() * volStep;
+      const low = open - Math.random() * volStep;
+      const close = open + (Math.random() - 0.49) * (volStep * 0.8);
+      lastClose = close;
+
+      candles.push({
+        time,
+        open: Number(open.toFixed(2)),
+        high: Number(high.toFixed(2)),
+        low: Number(low.toFixed(2)),
+        close: Number(close.toFixed(2)),
+      });
+    }
+    return candles;
+  }, []);
+
+  // Initialize Lightweight Chart instance
   useEffect(() => {
     if (!chartContainerRef.current) return;
 
     let chart: any = null;
 
-    // Dynamically load lightweight-charts client-side
     import('lightweight-charts').then((LightweightCharts) => {
       if (!chartContainerRef.current) return;
 
       chart = LightweightCharts.createChart(chartContainerRef.current, {
         width: chartContainerRef.current.clientWidth,
-        height: chartContainerRef.current.clientHeight || 380,
+        height: chartContainerRef.current.clientHeight || 360,
         layout: {
           background: { color: '#ffffff' },
           textColor: '#475569',
@@ -36,12 +71,16 @@ export default function Chart({ symbol, currentPrice, candleData, events = [] }:
           fontFamily: 'sans-serif',
         },
         grid: {
-          vertLines: { color: '#f1f5f9' },
-          horzLines: { color: '#f1f5f9' },
+          vertLines: { color: '#f8fafc' },
+          horzLines: { color: '#f8fafc' },
         },
         rightPriceScale: {
           borderColor: '#e2e8f0',
           autoScale: true,
+          scaleMargins: {
+            top: 0.1,
+            bottom: 0.1,
+          },
         },
         timeScale: {
           borderColor: '#e2e8f0',
@@ -65,30 +104,10 @@ export default function Chart({ symbol, currentPrice, candleData, events = [] }:
       });
       candlestickSeriesRef.current = candleSeries;
 
-      // Seed initial dummy historical ticks
-      const nowSec = Math.floor(Date.now() / 1000);
-      const base = currentPrice || 64250.0;
-      const initialCandles = [];
-      let lastClose = base;
-
-      for (let i = 60; i >= 0; i--) {
-        const time = nowSec - i * 5;
-        const open = lastClose;
-        const high = open + (Math.random() * 2.0);
-        const low = open - (Math.random() * 2.0);
-        const close = open + ((Math.random() - 0.48) * 1.5);
-        lastClose = close;
-
-        initialCandles.push({
-          time,
-          open: Number(open.toFixed(2)),
-          high: Number(high.toFixed(2)),
-          low: Number(low.toFixed(2)),
-          close: Number(close.toFixed(2)),
-        });
-      }
-
-      candleSeries.setData(initialCandles);
+      // Seed initial candles for current symbol
+      const initial = generateHistoryForSymbol(symbol, currentPrice);
+      candleSeries.setData(initial);
+      chart.timeScale().fitContent();
 
       const handleResize = () => {
         if (chartContainerRef.current && chart) {
@@ -110,9 +129,35 @@ export default function Chart({ symbol, currentPrice, candleData, events = [] }:
     };
   }, []);
 
-  // Update realtime candlestick
+  // When symbol switches, cleanly reset candles to that symbol's exact price scale
+  useEffect(() => {
+    if (!candlestickSeriesRef.current || !chartInstanceRef.current) return;
+
+    currentSymbolRef.current = symbol;
+
+    // Remove old POC line
+    if (pocLineRef.current) {
+      try {
+        candlestickSeriesRef.current.removePriceLine(pocLineRef.current);
+      } catch (e) {}
+      pocLineRef.current = null;
+    }
+
+    // Set new tailored candles
+    const newCandles = generateHistoryForSymbol(symbol, currentPrice);
+    candlestickSeriesRef.current.setData(newCandles);
+    chartInstanceRef.current.timeScale().fitContent();
+  }, [symbol, generateHistoryForSymbol]);
+
+  // Update live tick / candle
   useEffect(() => {
     if (!candlestickSeriesRef.current || !currentPrice) return;
+
+    // Avoid updating if candle is from another symbol during transition
+    const baseTarget = DEFAULT_SYMBOL_PRICES[symbol] || 83020;
+    if (Math.abs(currentPrice - baseTarget) / baseTarget > 0.5) {
+      return;
+    }
 
     const nowSec = Math.floor(Date.now() / 1000);
     const bucketTime = Math.floor(nowSec / 5) * 5;
@@ -125,16 +170,16 @@ export default function Chart({ symbol, currentPrice, candleData, events = [] }:
       close: candleData.close,
     } : {
       time: bucketTime,
-      open: currentPrice - 0.2,
-      high: currentPrice + 0.5,
-      low: currentPrice - 0.5,
+      open: currentPrice - 0.1,
+      high: currentPrice + 0.2,
+      low: currentPrice - 0.2,
       close: currentPrice,
     };
 
     try {
       candlestickSeriesRef.current.update(candle);
     } catch (e) {}
-  }, [currentPrice, candleData]);
+  }, [currentPrice, candleData, symbol]);
 
   // Update POC horizontal line
   useEffect(() => {
@@ -156,7 +201,7 @@ export default function Chart({ symbol, currentPrice, candleData, events = [] }:
 
   return (
     <div className="flex flex-col h-full bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-      <div className="flex items-center justify-between px-4 py-2.5 bg-slate-50 border-b border-slate-200">
+      <div className="flex items-center justify-between px-4 py-2 bg-slate-50 border-b border-slate-200">
         <div className="flex items-center space-x-3">
           <span className="text-xs font-bold text-slate-800 uppercase tracking-wide">{symbol} PERPETUAL FUTURES</span>
           <span className="text-xs text-blue-700 font-bold bg-blue-100/80 px-2.5 py-0.5 rounded border border-blue-200 font-mono">
@@ -181,9 +226,9 @@ export default function Chart({ symbol, currentPrice, candleData, events = [] }:
         </div>
       </div>
 
-      <div className="relative flex-1 min-h-[360px] w-full" ref={chartContainerRef}>
+      <div className="relative flex-1 min-h-[340px] w-full" ref={chartContainerRef}>
         {candleData?.poc_price && (
-          <div className="absolute top-2 right-2 z-10 text-xs bg-amber-50 text-amber-900 border border-amber-200 px-2.5 py-1 rounded shadow-sm">
+          <div className="absolute top-2 right-2 z-10 text-[11px] bg-amber-50 text-amber-900 border border-amber-200 px-2.5 py-1 rounded shadow-sm font-mono">
             POC: ${candleData.poc_price.toFixed(2)} | VAH: ${candleData.vah.toFixed(2)} | VAL: ${candleData.val.toFixed(2)}
           </div>
         )}

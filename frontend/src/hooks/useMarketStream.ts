@@ -213,9 +213,9 @@ export function useMarketStream(backendUrl: string = 'http://localhost:8000') {
       state.cvd += (obi > 0 ? 1 : -1) * (Math.random() * 0.8);
       const cvd1m = Math.round(state.cvd * 10) / 10;
 
-      // Check anomalies
+      // Check anomalies (calm interval)
       const newEvents: AnomalyEvent[] = [];
-      if (now - state.lastEventTime > 8000) {
+      if (now - state.lastEventTime > 25000) {
         state.lastEventTime = now;
         const types: AnomalyEvent['type'][] = ['LIQUIDITY_SWEEP', 'POTENTIAL_SPOOF', 'POTENTIAL_ICEBERG', 'FAKEOUT'];
         const chosenType = types[Math.floor(Math.random() * types.length)];
@@ -296,7 +296,7 @@ export function useMarketStream(backendUrl: string = 'http://localhost:8000') {
 
       setFeed(simulatedFeed);
       setLatencyMs(Math.round(Math.random() * 2 + 1));
-    }, 200);
+    }, 1000);
 
     return () => {
       if (simTickerRef.current) clearInterval(simTickerRef.current);
