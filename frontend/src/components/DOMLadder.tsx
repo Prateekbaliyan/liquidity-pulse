@@ -5,9 +5,11 @@ import { OrderBookData } from '@/hooks/useMarketStream';
 
 interface DOMLadderProps {
   orderbook?: OrderBookData;
+  currency?: string;
+  isIndian?: boolean;
 }
 
-export default function DOMLadder({ orderbook }: DOMLadderProps) {
+export default function DOMLadder({ orderbook, currency = '$', isIndian = false }: DOMLadderProps) {
   if (!orderbook || (!orderbook.bids.length && !orderbook.asks.length)) {
     return (
       <div className="flex flex-col items-center justify-center h-full bg-white border border-slate-200 rounded-xl p-4 text-slate-400 text-xs shadow-sm">
@@ -23,13 +25,22 @@ export default function DOMLadder({ orderbook }: DOMLadderProps) {
   const maxAskVol = Math.max(...asks.map((a) => a[1]), 1.0);
   const maxVol = Math.max(maxBidVol, maxAskVol);
 
+  const formatSize = (size: number) => {
+    if (isIndian) {
+      return size.toLocaleString('en-IN');
+    }
+    return size.toFixed(3);
+  };
+
   return (
     <div className="flex flex-col h-full bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm font-mono text-xs">
       <div className="flex items-center justify-between px-3 py-2 bg-slate-50 border-b border-slate-200 font-sans">
-        <span className="font-bold text-slate-800 text-xs uppercase tracking-wide">DOM ORDERBOOK</span>
+        <span className="font-bold text-slate-800 text-xs uppercase tracking-wide">
+          {isIndian ? 'L2 DOM DEPTH (NSE)' : 'DOM ORDERBOOK'}
+        </span>
         <div className="flex items-center space-x-2 text-xs">
           <span className="text-slate-500">Spread:</span>
-          <span className="text-blue-700 font-bold font-mono">${orderbook.spread.toFixed(2)}</span>
+          <span className="text-blue-700 font-bold font-mono">{currency}{orderbook.spread.toFixed(2)}</span>
           <span className="text-slate-400 font-mono">({orderbook.spread_bps.toFixed(2)} bps)</span>
         </div>
       </div>
@@ -46,22 +57,22 @@ export default function DOMLadder({ orderbook }: DOMLadderProps) {
                   className="absolute right-0 top-0 bottom-0 bg-red-200/50 transition-all duration-150"
                   style={{ width: `${widthPct}%` }}
                 />
-                <span className="relative z-10 text-red-700 font-bold font-mono">${price.toFixed(2)}</span>
+                <span className="relative z-10 text-red-700 font-bold font-mono">{currency}{price.toFixed(2)}</span>
                 <div className="relative z-10 flex items-center space-x-1 font-mono">
                   {isWall && (
                     <span className="text-[9px] bg-red-600 text-white font-sans font-bold px-1 rounded">WALL</span>
                   )}
-                  <span className="text-slate-700 font-semibold">{size.toFixed(3)}</span>
+                  <span className="text-slate-700 font-semibold">{formatSize(size)}</span>
                 </div>
               </div>
             );
           })}
         </div>
 
-        {/* MID PRICE SPREAD BAR */}
-        <div className="flex items-center justify-between px-3 py-1.5 bg-slate-100 border-y border-slate-200 font-sans">
-          <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wide">INSIDE SPREAD</span>
-          <span className="text-xs text-blue-700 font-bold font-mono">${orderbook.spread.toFixed(2)}</span>
+        {/* INSIDE SPREAD BAR */}
+        <div className="flex items-center justify-between px-3 py-1 bg-slate-100 text-[11px] font-sans font-semibold text-slate-600">
+          <span>INSIDE SPREAD</span>
+          <span className="font-mono text-blue-700 font-bold">{currency}{orderbook.spread.toFixed(2)}</span>
         </div>
 
         {/* BIDS (GREEN) */}
@@ -72,15 +83,15 @@ export default function DOMLadder({ orderbook }: DOMLadderProps) {
             return (
               <div key={`bid-${i}`} className="relative flex items-center justify-between h-5 px-2 rounded overflow-hidden">
                 <div
-                  className="absolute right-0 top-0 bottom-0 bg-emerald-200/50 transition-all duration-150"
+                  className="absolute left-0 top-0 bottom-0 bg-emerald-200/50 transition-all duration-150"
                   style={{ width: `${widthPct}%` }}
                 />
-                <span className="relative z-10 text-emerald-700 font-bold font-mono">${price.toFixed(2)}</span>
+                <span className="relative z-10 text-emerald-700 font-bold font-mono">{currency}{price.toFixed(2)}</span>
                 <div className="relative z-10 flex items-center space-x-1 font-mono">
                   {isWall && (
                     <span className="text-[9px] bg-emerald-600 text-white font-sans font-bold px-1 rounded">WALL</span>
                   )}
-                  <span className="text-slate-700 font-semibold">{size.toFixed(3)}</span>
+                  <span className="text-slate-700 font-semibold">{formatSize(size)}</span>
                 </div>
               </div>
             );

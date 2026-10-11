@@ -5,9 +5,10 @@ import { MetricsData } from '@/hooks/useMarketStream';
 
 interface MetricsHUDProps {
   metrics?: MetricsData;
+  currency?: string;
 }
 
-export default function MetricsHUD({ metrics }: MetricsHUDProps) {
+export default function MetricsHUD({ metrics, currency = '$' }: MetricsHUDProps) {
   if (!metrics) {
     return (
       <div className="flex flex-col items-center justify-center p-2 bg-white border border-slate-200 rounded-lg text-slate-400 text-xs shadow-sm">
@@ -48,7 +49,7 @@ export default function MetricsHUD({ metrics }: MetricsHUDProps) {
             </span>
           </div>
           <span className="text-sm font-extrabold my-0.5 text-blue-700 truncate">
-            ${metrics.stoikov_micro_price.toFixed(2)}
+            {currency}{metrics.stoikov_micro_price.toFixed(2)}
           </span>
         </div>
 

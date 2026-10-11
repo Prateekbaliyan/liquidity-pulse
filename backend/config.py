@@ -4,8 +4,11 @@ from pydantic import BaseModel
 class Settings(BaseModel):
     APP_NAME: str = "LiquidityPulse"
     ENV: str = os.getenv("ENV", "development")
-    DEFAULT_SYMBOL: str = os.getenv("DEFAULT_SYMBOL", "BTCUSDT")
-    SUPPORTED_SYMBOLS: list[str] = ["BTCUSDT", "ETHUSDT", "BNBUSDT", "SOLUSDT"]
+    DEFAULT_SYMBOL: str = os.getenv("DEFAULT_SYMBOL", "RELIANCE")
+    SUPPORTED_SYMBOLS: list[str] = [
+        "RELIANCE", "HDFCBANK", "TCS", "TATAMOTORS", "INFY", "ICICIBANK", "SBIN",
+        "BTCUSDT", "ETHUSDT", "BNBUSDT", "SOLUSDT"
+    ]
     
     # Binance WS
     BINANCE_WS_BASE_URL: str = os.getenv("BINANCE_WS_BASE_URL", "wss://fstream.binance.com/ws")

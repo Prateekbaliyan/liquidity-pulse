@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import { useMarketStream } from '@/hooks/useMarketStream';
+import { useMarketStream, isIndianStock, INDIAN_STOCKS, CRYPTO_SYMBOLS } from '@/hooks/useMarketStream';
 import Chart from '@/components/Chart';
 import DOMLadder from '@/components/DOMLadder';
 import MetricsHUD from '@/components/MetricsHUD';
@@ -12,7 +12,7 @@ import ReplayControls from '@/components/ReplayControls';
 import BacktestPanel from '@/components/BacktestPanel';
 import ModelMonitor from '@/components/ModelMonitor';
 import AIAnalystPanel from '@/components/AIAnalystPanel';
-import { Activity, Wifi, WifiOff, Coins } from 'lucide-react';
+import { Activity, Wifi, Coins, TrendingUp } from 'lucide-react';
 
 export default function TerminalPage() {
   const {
@@ -27,11 +27,15 @@ export default function TerminalPage() {
   } = useMarketStream();
 
   const [activeBottomTab, setActiveBottomTab] = useState<'events' | 'backtest' | 'model' | 'ai'>('events');
+  const [marketTab, setMarketTab] = useState<'NSE' | 'CRYPTO'>('NSE');
+
+  const isIndian = isIndianStock(symbol);
+  const currency = isIndian ? '₹' : '$';
 
   return (
     <main className="flex flex-col h-screen w-screen bg-slate-100 text-slate-900 overflow-hidden font-sans select-none">
       {/* CLEAN WHITE & BLUE HEADER */}
-      <header className="flex items-center justify-between px-5 py-2.5 bg-white border-b border-slate-200 shadow-sm shrink-0">
+      <header className="flex items-center justify-between px-4 py-2 bg-white border-b border-slate-200 shadow-sm shrink-0">
         <div className="flex items-center space-x-3">
           <div className="flex items-center space-x-2">
             <Activity className="w-5 h-5 text-blue-600" />
@@ -40,35 +44,89 @@ export default function TerminalPage() {
             </h1>
           </div>
           
-          <div className="flex items-center space-x-1.5 bg-blue-50 border border-blue-200 px-3 py-1 rounded-md text-xs font-medium text-blue-700">
-            <Coins className="w-3.5 h-3.5 text-blue-600" />
-            <span>Crypto Perpetual Futures (Binance Live Stream)</span>
+          <div className="flex items-center space-x-1.5 bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-md text-xs font-semibold text-blue-800">
+            {isIndian ? (
+              <>
+                <TrendingUp className="w-3.5 h-3.5 text-blue-600" />
+                <span>🇮🇳 NSE India Live L2 Depth (Nifty 50 Leaders)</span>
+              </>
+            ) : (
+              <>
+                <Coins className="w-3.5 h-3.5 text-blue-600" />
+                <span>🌐 Crypto Perpetual Futures (Binance Stream)</span>
+              </>
+            )}
           </div>
         </div>
 
-        {/* SYMBOL SELECTOR & STATUS */}
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-1 bg-slate-100 p-1 rounded-lg border border-slate-200">
-            {['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT'].map((sym) => (
-              <button
-                key={sym}
-                onClick={() => setSymbol(sym)}
-                className={`px-3 py-1 text-xs font-semibold rounded-md transition-all ${
-                  symbol === sym
-                    ? 'bg-blue-600 text-white shadow font-bold'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
-                }`}
-              >
-                {sym}
-              </button>
-            ))}
+        {/* MARKET SELECTOR & SYMBOL PILLS */}
+        <div className="flex items-center space-x-3">
+          {/* MARKET SWITCHER */}
+          <div className="flex items-center bg-slate-200/80 p-0.5 rounded-lg border border-slate-300">
+            <button
+              onClick={() => {
+                setMarketTab('NSE');
+                setSymbol('RELIANCE');
+              }}
+              className={`flex items-center space-x-1 px-2.5 py-1 text-xs font-bold rounded-md transition-all ${
+                marketTab === 'NSE'
+                  ? 'bg-white text-blue-700 shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <span>🇮🇳 NSE EQUITIES</span>
+            </button>
+            <button
+              onClick={() => {
+                setMarketTab('CRYPTO');
+                setSymbol('BTCUSDT');
+              }}
+              className={`flex items-center space-x-1 px-2.5 py-1 text-xs font-bold rounded-md transition-all ${
+                marketTab === 'CRYPTO'
+                  ? 'bg-white text-blue-700 shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <span>🌐 CRYPTO</span>
+            </button>
+          </div>
+
+          {/* ACTIVE SYMBOL SELECTOR */}
+          <div className="flex items-center space-x-1 bg-slate-100 p-1 rounded-lg border border-slate-200 overflow-x-auto max-w-[480px]">
+            {marketTab === 'NSE'
+              ? INDIAN_STOCKS.map((item) => (
+                  <button
+                    key={item.symbol}
+                    onClick={() => setSymbol(item.symbol)}
+                    className={`px-2.5 py-0.5 text-xs font-semibold rounded-md transition-all whitespace-nowrap ${
+                      symbol === item.symbol
+                        ? 'bg-blue-600 text-white shadow font-bold'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                    }`}
+                  >
+                    {item.symbol}
+                  </button>
+                ))
+              : CRYPTO_SYMBOLS.map((item) => (
+                  <button
+                    key={item.symbol}
+                    onClick={() => setSymbol(item.symbol)}
+                    className={`px-2.5 py-0.5 text-xs font-semibold rounded-md transition-all whitespace-nowrap ${
+                      symbol === item.symbol
+                        ? 'bg-blue-600 text-white shadow font-bold'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                    }`}
+                  >
+                    {item.symbol}
+                  </button>
+                ))}
           </div>
 
           <div className="h-4 w-px bg-slate-200" />
 
           {/* STATUS PILL */}
-          <div className="flex items-center space-x-3 text-xs">
-            <div className="flex items-center space-x-1.5 px-3 py-1 rounded-md bg-slate-50 border border-slate-200 font-mono">
+          <div className="flex items-center space-x-2 text-xs">
+            <div className="flex items-center space-x-1.5 px-2.5 py-1 rounded-md bg-slate-50 border border-slate-200 font-mono">
               {isConnected ? (
                 <>
                   <Wifi className="w-3.5 h-3.5 text-emerald-600" />
@@ -111,12 +169,16 @@ export default function TerminalPage() {
 
         {/* CENTER DOM LADDER (3 COLS -> 25%) */}
         <div className="col-span-3 flex flex-col h-full overflow-hidden">
-          <DOMLadder orderbook={feed?.orderbook} />
+          <DOMLadder
+            orderbook={feed?.orderbook}
+            currency={currency}
+            isIndian={isIndian}
+          />
         </div>
 
         {/* RIGHT METRICS & SIGNALS (3 COLS -> 25%) */}
         <div className="col-span-3 flex flex-col justify-between h-full overflow-hidden gap-1.5">
-          <MetricsHUD metrics={feed?.metrics} />
+          <MetricsHUD metrics={feed?.metrics} currency={currency} />
           <SignalPanel signal={feed?.signal} prediction={feed?.prediction} />
           <RiskPanel risk={feed?.risk} />
         </div>
@@ -136,7 +198,6 @@ export default function TerminalPage() {
           >
             ANOMALY EVENT FEED ({recentEvents.length})
           </button>
-
           <button
             onClick={() => setActiveBottomTab('backtest')}
             className={`px-3 py-1 rounded-md text-xs transition-colors ${
@@ -147,7 +208,6 @@ export default function TerminalPage() {
           >
             STRATEGY BACKTESTER
           </button>
-
           <button
             onClick={() => setActiveBottomTab('model')}
             className={`px-3 py-1 rounded-md text-xs transition-colors ${
@@ -158,7 +218,6 @@ export default function TerminalPage() {
           >
             ONNX MODEL MONITOR
           </button>
-
           <button
             onClick={() => setActiveBottomTab('ai')}
             className={`px-3 py-1 rounded-md text-xs transition-colors ${
@@ -172,7 +231,7 @@ export default function TerminalPage() {
         </div>
 
         {/* TAB CONTENT */}
-        <div className="flex-1 p-2 overflow-hidden bg-slate-50/50">
+        <div className="flex-1 overflow-y-auto p-3">
           {activeBottomTab === 'events' && <EventFeed events={recentEvents} />}
           {activeBottomTab === 'backtest' && <BacktestPanel symbol={symbol} />}
           {activeBottomTab === 'model' && <ModelMonitor prediction={feed?.prediction} />}

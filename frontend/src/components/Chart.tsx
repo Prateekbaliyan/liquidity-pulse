@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { CandleData, AnomalyEvent } from '@/hooks/useMarketStream';
+import { CandleData, AnomalyEvent, isIndianStock } from '@/hooks/useMarketStream';
 
 interface ChartProps {
   symbol: string;
@@ -11,6 +11,15 @@ interface ChartProps {
 }
 
 const DEFAULT_SYMBOL_PRICES: Record<string, number> = {
+  // Indian Heavyweights (NSE)
+  RELIANCE: 2940.50,
+  HDFCBANK: 1685.40,
+  TCS: 4180.25,
+  TATAMOTORS: 965.80,
+  INFY: 1875.60,
+  ICICIBANK: 1245.30,
+  SBIN: 795.50,
+  // Crypto
   BTCUSDT: 83020.0,
   ETHUSDT: 3480.0,
   BNBUSDT: 590.0,
@@ -25,20 +34,24 @@ export default function Chart({ symbol, currentPrice, candleData, events = [] }:
   const pocLineRef = useRef<any>(null);
   const currentSymbolRef = useRef<string>(symbol);
 
-  // Helper to generate realistic historical candles for a specific coin price
+  const isIndia = isIndianStock(symbol);
+  const currSign = isIndia ? '₹' : '$';
+
+  // Helper to generate realistic historical candles for a specific coin/stock price
   const generateHistoryForSymbol = useCallback((sym: string, price: number) => {
-    const base = price > 0 ? price : (DEFAULT_SYMBOL_PRICES[sym] || 83020.0);
+    const base = price > 0 ? price : (DEFAULT_SYMBOL_PRICES[sym] || 2940.50);
+    const isInd = isIndianStock(sym);
     const nowSec = Math.floor(Date.now() / 1000);
     const candles = [];
     let lastClose = base;
-    const volStep = Math.max(0.04, base * 0.00025);
+    const volStep = Math.max(isInd ? 0.25 : 0.04, base * (isInd ? 0.0002 : 0.00025));
 
     for (let i = 50; i >= 0; i--) {
       const time = nowSec - i * 5;
       const open = lastClose;
       const high = open + Math.random() * volStep;
       const low = open - Math.random() * volStep;
-      const close = open + (Math.random() - 0.49) * (volStep * 0.8);
+      const close = open + (Math.random() - 0.49) * (volStep * 0.85);
       lastClose = close;
 
       candles.push({
@@ -153,9 +166,9 @@ export default function Chart({ symbol, currentPrice, candleData, events = [] }:
   useEffect(() => {
     if (!candlestickSeriesRef.current || !currentPrice) return;
 
-    // Avoid updating if candle is from another symbol during transition
-    const baseTarget = DEFAULT_SYMBOL_PRICES[symbol] || 83020;
-    if (Math.abs(currentPrice - baseTarget) / baseTarget > 0.5) {
+    // Avoid updating if candle price mismatch during symbol transition
+    const baseTarget = DEFAULT_SYMBOL_PRICES[symbol] || 2940.50;
+    if (Math.abs(currentPrice - baseTarget) / baseTarget > 0.6) {
       return;
     }
 
@@ -194,18 +207,23 @@ export default function Chart({ symbol, currentPrice, candleData, events = [] }:
         lineWidth: 1,
         lineStyle: 2,
         axisLabelVisible: true,
-        title: `POC ${candleData.poc_price.toFixed(2)}`,
+        title: `POC ${currSign}${candleData.poc_price.toFixed(2)}`,
       });
     } catch (e) {}
-  }, [candleData?.poc_price]);
+  }, [candleData?.poc_price, currSign]);
 
   return (
     <div className="flex flex-col h-full bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
       <div className="flex items-center justify-between px-4 py-2 bg-slate-50 border-b border-slate-200">
         <div className="flex items-center space-x-3">
-          <span className="text-xs font-bold text-slate-800 uppercase tracking-wide">{symbol} PERPETUAL FUTURES</span>
+          <div className="flex items-center space-x-1.5">
+            <span className="text-xs font-extrabold text-slate-900 tracking-wide">{symbol}</span>
+            <span className="text-[10px] font-bold text-blue-700 bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded">
+              {isIndia ? 'NSE INDIA' : 'PERPETUAL'}
+            </span>
+          </div>
           <span className="text-xs text-blue-700 font-bold bg-blue-100/80 px-2.5 py-0.5 rounded border border-blue-200 font-mono">
-            ${currentPrice > 0 ? currentPrice.toFixed(2) : '---'}
+            {currSign}{currentPrice > 0 ? currentPrice.toFixed(2) : '---'}
           </span>
         </div>
 
@@ -229,7 +247,7 @@ export default function Chart({ symbol, currentPrice, candleData, events = [] }:
       <div className="relative flex-1 min-h-[340px] w-full" ref={chartContainerRef}>
         {candleData?.poc_price && (
           <div className="absolute top-2 right-2 z-10 text-[11px] bg-amber-50 text-amber-900 border border-amber-200 px-2.5 py-1 rounded shadow-sm font-mono">
-            POC: ${candleData.poc_price.toFixed(2)} | VAH: ${candleData.vah.toFixed(2)} | VAL: ${candleData.val.toFixed(2)}
+            POC: {currSign}{candleData.poc_price.toFixed(2)} | VAH: {currSign}{candleData.vah.toFixed(2)} | VAL: {currSign}{candleData.val.toFixed(2)}
           </div>
         )}
       </div>
